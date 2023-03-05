@@ -1,4 +1,3 @@
-from scipy import signal, fft
 import numpy
 import scipy
 import matplotlib.pyplot as plt
@@ -39,3 +38,82 @@ ax.set_ylabel("Амплітуда спектра ", fontsize = 14)
 plt.title("Спектр сигнала с максимальной частотой Fmax = 5", fontsize = 14)
 ax.grid()
 fig.savefig('./figures/' + 'графік 2' + '.png', dpi=600)
+
+F_filter = 12
+dispersions = []
+signal_noise = []
+discrete_spectrums = []
+E1 = []
+discrete_signals = []
+discrete_signal_after_filers = []
+w = F_filter / (Fs / 2)
+parameters_fil = scipy.signal.butter(3, w, 'low', output='sos')
+filtered_signal_2 = None
+for Dt in [2, 4, 8, 16]:
+    discrete_signal = numpy.zeros(n)
+    for i in range(0, round(n / Dt)):
+        discrete_signal[i * Dt] = filtered_signal[i * Dt]
+        filtered_signal_2 = scipy.signal.sosfiltfilt(parameters_fil, discrete_signal)
+    discrete_signals += [list(discrete_signal)]
+    discrete_spectrum = scipy.fft.fft(discrete_signals)
+    discrete_spectrum = numpy.abs(scipy.fft.fftshift(discrete_spectrum))
+    discrete_spectrums.append(list(discrete_spectrum))
+    discrete_signal_after_filers += [list(filtered_signal_2)]
+
+for i in range(4):
+    E1 = discrete_signal_after_filers[i] - filtered_signal
+    dispersion = numpy.var(E1)
+    dispersions.append(dispersion)
+    signal_noise.append(numpy.var(filtered_signal)/dispersion)
+
+fig, ax = plt.subplots(2, 2, figsize=(21/2.54, 14/2.54))
+s = 0
+for i in range(0, 2):
+    for j in range(0, 2):
+        ax[i][j].plot(time_line_ox, discrete_signals[s], linewidth=1)
+        ax[i][j].grid()
+        s += 1
+fig.supxlabel('Час (секунди)', fontsize=14)
+fig.supylabel('Амплітуда сигналу', fontsize=14)
+fig.suptitle('Сигнал з кроком дискретизації Dt = (2,4,8,16)', fontsize=14)
+fig.savefig('./figures/' + 'графік 3' + '.png', dpi=600)
+
+s = 0
+fig, ax = plt.subplots(2, 2, figsize=(21 / 2.54, 14 / 2.54))
+for i in range(0, 2):
+    for j in range(0, 2):
+        ax[i][j].plot(freq_countdown, discrete_spectrum[s], linewidth=1)
+        s += 1
+fig.supxlabel("Частота (Гц)", fontsize=14)
+fig.supylabel("Амплитуда спектра", fontsize=14)
+fig.suptitle("Сигнал з шагом дискретизации Dt = (2, 4, 8, 16)", fontsize=14)
+fig.savefig('./figures/' + 'график 4' + '.png', dpi=600)
+
+fig, ax = plt.subplots(2, 2, figsize=(21/2.54, 14/2.54))
+s = 0
+for i in range(0, 2):
+    for j in range(0, 2):
+        ax[i][j].plot(time_line_ox, discrete_signal_after_filers[s], linewidth=1)
+        ax[i][j].grid()
+        s += 1
+fig.supxlabel('Час (секунди)', fontsize=14)
+fig.supylabel('Амплітуда сигналу', fontsize=14)
+fig.suptitle('Відновлені аналогові сигнали з кроком дискретизації Dt = (2,4,8,16)', fontsize=14)
+fig.savefig('./figures/' + 'графік 5' + '.png', dpi=600)
+
+fig, ax = plt.subplots(figsize=(21/2.54, 14/2.54))
+ax.plot((2,4,8,16), dispersions, linewidth=1)
+ax.set_xlabel('Крок дискретизації', fontsize=14)
+ax.set_ylabel('Дисперсія', fontsize=14)
+plt.title(f'Залежність дисперсії від кроку дискретизації', fontsize=14)
+ax.grid()
+fig.savefig('./figures/' + 'графік 6' + '.png', dpi=600)
+
+fig, ax = plt.subplots(figsize=(21/2.54, 14/2.54))
+ax.plot((2,4,8,16), signal_noise, linewidth=1)
+ax.set_xlabel('Крок дискретизації', fontsize=14)
+ax.set_ylabel('ССШ', fontsize=14)
+plt.title(f'Залежність співвідношення сигнал-шум від кроку дискретизації', fontsize=14)
+ax.grid()
+fig.savefig('./figures/' + 'графік 7' + '.png', dpi=600)
+
