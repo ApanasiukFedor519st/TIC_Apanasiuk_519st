@@ -117,3 +117,81 @@ plt.title(f'Залежність співвідношення сигнал-шу�
 ax.grid()
 fig.savefig('./figures/' + 'графік 7' + '.png', dpi=600)
 
+bits_list = []
+quantize_signals = []
+quantize_tables = []
+levels = [4, 16, 64, 256]
+num = 0
+for M in levels:
+    delta = (numpy.max(filtered_signal) - numpy.min(filtered_signal)) / (M - 1)
+    quantize_signal = delta * numpy.round(filtered_signal / delta)
+    quantize_signals.append(list(quantize_signal))
+    quantize_levels = numpy.arange(numpy.min(quantize_signal), numpy.max(quantize_signal) + 1, delta)
+    quantize_bit = numpy.arange(0, M)
+    quantize_bit = [format(bits, '0' + str(int(numpy.log(M) / numpy.log(2))) + 'b') for bits in quantize_bit]
+    quantize_table = numpy.c_[quantize_levels[:M], quantize_bit[:M]]
+    quantize_tables.append(quantize_table)
+    bits = []
+    for signal_value in quantize_signal:
+        for index, value in enumerate(quantize_levels[:M]):
+            if numpy.round(numpy.abs(signal_value - value), 0) == 0:
+                bits.append(quantize_bit[index])
+                break
+
+    bits = [int(item) for item in list(''.join(bits))]
+    bits_list.append(bits)
+    num += 1
+
+dispersions = []
+signal_noise = []
+for i in range(4):
+    E1 = quantize_signals[i] - filtered_signal
+    dispersion = numpy.var(E1)
+    dispersions.append(dispersion)
+    signal_noise.append(numpy.var(filtered_signal) / dispersion)
+
+for i in range(4):
+    fig, ax = plt.subplots(figsize=(14 / 2.54, levels[i] / 2.54))
+    table = ax.table(cellText=quantize_tables[i], colLabels=['Значення сигналу', 'Кодова послідовність'], loc='center')
+    table.set_fontsize(14)
+    table.scale(1, 2)
+    ax.axis('off')
+    fig.savefig('./figures/' + 'Таблиця квантування для %d рівнів ' % levels[i] + '.png', dpi=600)
+
+for i in range(4):
+    fig, ax = plt.subplots(figsize=(21 / 2.54, 14 / 2.54))
+    ax.step(numpy.arange(0, len(bits_list[i])), bits_list[i], linewidth=0.1)
+    ax.set_xlabel('Біти', fontsize=14)
+    ax.set_ylabel('Амплітуда сигналу', fontsize=14)
+    plt.title(f'Кодова послідовність при кількості рівнів квантування {levels[i]}', fontsize=14)
+    ax.grid()
+    fig.savefig('./figures/' + 'Графік %d ' % (8 + i) + '.png', dpi=600)
+
+
+fig, ax = plt.subplots(2, 2, figsize=(21 / 2.54, 14 / 2.54))
+s = 0
+for i in range(0, 2):
+    for j in range(0, 2):
+        ax[i][j].plot(time_line_ox, quantize_signals[s], linewidth=1)
+        ax[i][j].grid()
+        s += 1
+fig.supxlabel('Час (секунди)', fontsize=14)
+fig.supylabel('Амплітуда сигналу', fontsize=14)
+fig.suptitle(f'Цифрові сигнали з рівнями квантування (4, 16, 64, 256)', fontsize=14)
+fig.savefig('./figures/' + 'графік 12' + '.png', dpi=600)
+
+fig, ax = plt.subplots(figsize=(21 / 2.54, 14 / 2.54))
+ax.plot([4, 16, 64, 256], dispersions, linewidth=1)
+ax.set_xlabel('Кількість рівнів квантування', fontsize=14)
+ax.set_ylabel('Дисперсія', fontsize=14)
+plt.title(f'Залежність дисперсії від кількості рівнів квантування', fontsize=14)
+ax.grid()
+fig.savefig('./figures/' + 'графік 13' + '.png', dpi=600)
+
+fig, ax = plt.subplots(figsize=(21 / 2.54, 14 / 2.54))
+ax.plot([4, 16, 64, 256], signal_noise, linewidth=1)
+ax.set_xlabel('Кількість рівнів квантування', fontsize=14)
+ax.set_ylabel('ССШ', fontsize=14)
+plt.title(f'Залежність співвідношення сигнал-шум від кількості рівнів квантування', fontsize=14)
+ax.grid()
+fig.savefig('./figures/' + 'графік 14' + '.png', dpi=600)
